@@ -161,6 +161,16 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px 
   gap: 12px;
 }
 .card h2 { font: 400 17px/1.25 var(--display); margin: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.weeknav { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: var(--ink-soft); }
+.weeknav span { min-width: 92px; text-align: center; font-variant-numeric: tabular-nums; }
+.weeknav button {
+  width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface-2);
+  font: 800 20px/1 var(--body); display: grid; place-items: center; padding: 0 0 2px;
+}
+.weeknav button:disabled { opacity: .35; cursor: default; }
+.heat-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.week-totals { font-weight: 800; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 .card .lede { margin: -6px 0 0; color: var(--ink-soft); font-weight: 700; font-size: 14px; }
 .card .lede strong { color: var(--ink); }
 
@@ -168,7 +178,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px 
 .heat-wrap { overflow-x: auto; }
 .heat {
   display: grid;
-  grid-template-columns: 38px repeat(24, minmax(8px, 1fr));
+  grid-template-columns: 46px repeat(24, minmax(8px, 1fr));
   gap: 2px;
   font-size: 11px;
   font-weight: 700;
@@ -383,10 +393,20 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   <div class="undo-row" id="undoRow"></div>
 
   <section class="card" aria-labelledby="heatTitle">
-    <h2 id="heatTitle">Favourite hour</h2>
+    <div class="card-head">
+      <h2 id="heatTitle">Favourite hour</h2>
+      <div class="weeknav">
+        <button id="heatPrev" aria-label="Previous week">‹</button>
+        <span id="heatRange" aria-live="polite">Last 7 days</span>
+        <button id="heatNext" aria-label="Next week">›</button>
+      </div>
+    </div>
     <p class="lede" id="favHour"></p>
     <div class="heat-wrap"><div class="heat" id="heat"></div></div>
-    <div class="legend">less <i></i><i style="background:color-mix(in oklab, var(--kick) 30%, var(--surface-2))"></i><i style="background:color-mix(in oklab, var(--kick) 55%, var(--surface-2))"></i><i style="background:color-mix(in oklab, var(--kick) 80%, var(--surface-2))"></i><i style="background:var(--kick)"></i> more</div>
+    <div class="heat-foot">
+      <span class="week-totals" id="weekTotals"></span>
+      <div class="legend">less <i></i><i style="background:color-mix(in oklab, var(--kick) 30%, var(--surface-2))"></i><i style="background:color-mix(in oklab, var(--kick) 55%, var(--surface-2))"></i><i style="background:color-mix(in oklab, var(--kick) 80%, var(--surface-2))"></i><i style="background:var(--kick)"></i> more</div>
+    </div>
   </section>
 
   <section class="card" aria-labelledby="badgeTitle">
@@ -625,24 +645,40 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     $('today').textContent = new Date().toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
+  let weeksBack = 0;
   function renderHeat() {
     const today0 = startOfDay(Date.now());
-    // last 7 days, oldest first; setDate keeps day starts right across DST changes
+    const latest = weeksBack === 0;
+    // 7 days ending today (or N weeks earlier), oldest first; setDate keeps day starts right across DST changes
     const grid = [];
-    for (let r = 6; r >= 0; r--) { const d = new Date(today0); d.setDate(d.getDate() - r); grid.push({ start: d.getTime(), cells: new Array(24).fill(0) }); }
+    for (let r = 6; r >= 0; r--) { const d = new Date(today0); d.setDate(d.getDate() - r - weeksBack * 7); grid.push({ start: d.getTime(), cells: new Array(24).fill(0) }); }
+    const endD = new Date(grid[6].start); endD.setDate(endD.getDate() + 1);
+    const end = endD.getTime();
     const hourTotals = new Array(24).fill(0);
+    const tally = { kick: 0, wiggle: 0, tummy: 0 };
     state.events.forEach(e => {
+      if (e.ts < grid[0].start || e.ts >= end) return;
+      tally[e.type]++;
       if (e.type === 'tummy') return;
       const h = new Date(e.ts).getHours();
-      if (e.ts >= today0 - 13 * DAY) hourTotals[h]++;
+      hourTotals[h]++;
       const row = grid.find((g, i) => e.ts >= g.start && (i === 6 || e.ts < grid[i + 1].start));
-      if (row && e.ts >= grid[0].start) row.cells[h]++;
+      if (row) row.cells[h]++;
     });
+
+    // week navigation
+    const md = (t) => new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    $('heatRange').textContent = latest ? 'Last 7 days' : `${md(grid[0].start)} – ${md(grid[6].start)}`;
+    $('heatNext').disabled = latest;
+    const first = state.events.reduce((m, e) => Math.min(m, e.ts), Infinity);
+    $('heatPrev').disabled = !(first < grid[0].start);
+
     const max = Math.max(1, ...grid.flatMap(g => g.cells));
     let html = '';
     grid.forEach((g, i) => {
-      const label = i === 6 ? 'Today' : new Date(g.start).toLocaleDateString([], { weekday: 'short' });
-      html += `<div class="day${i === 6 ? ' today' : ''}">${label}</div>`;
+      const isToday = latest && i === 6;
+      const label = isToday ? 'Today' : new Date(g.start).toLocaleDateString([], latest ? { weekday: 'short' } : { weekday: 'short', day: 'numeric' });
+      html += `<div class="day${isToday ? ' today' : ''}">${label}</div>`;
       g.cells.forEach((n, h) => {
         const l = n === 0 ? 0 : Math.max(1, Math.ceil((n / max) * 4));
         html += `<div class="cell" data-l="${l}" title="${label} ${fmtHour(h)}: ${n}"></div>`;
@@ -652,12 +688,18 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     $('heat').innerHTML = html;
 
     const top = Math.max(...hourTotals);
+    const span = latest ? 'this week' : 'that week';
     if (top < 3) {
-      $('favHour').textContent = `Log a few more moves and ${state.name}'s favourite hour will show up here.`;
+      $('favHour').textContent = latest
+        ? `Log a few more moves and ${state.name}'s favourite hour will show up here.`
+        : `Not enough moves logged ${span} to pick a favourite hour.`;
     } else {
       const h = hourTotals.indexOf(top);
-      $('favHour').innerHTML = `${escapeHtml(state.name)} is busiest around <strong>${fmtHour(h)}–${fmtHour((h + 1) % 24)}</strong>. Kicks and wiggles from the last two weeks.`;
+      $('favHour').innerHTML = `${escapeHtml(state.name)} was busiest around <strong>${fmtHour(h)}–${fmtHour((h + 1) % 24)}</strong> ${span}.`;
     }
+    const parts = [`${tally.kick} ${tally.kick === 1 ? 'kick' : 'kicks'}`, `${tally.wiggle} ${tally.wiggle === 1 ? 'wiggle' : 'wiggles'}`];
+    if (tally.tummy) parts.push(`${tally.tummy} tummy`);
+    $('weekTotals').textContent = parts.join(' · ');
   }
 
   let freshBadges = [];
@@ -908,6 +950,9 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
     state.due = e.target.value; save(); renderDue();
   });
+
+  $('heatPrev').addEventListener('click', () => { weeksBack++; renderHeat(); });
+  $('heatNext').addEventListener('click', () => { weeksBack = Math.max(0, weeksBack - 1); renderHeat(); });
 
   $('shareBtn').addEventListener('click', openShare);
   $('sendBtn').addEventListener('click', sendShare);
