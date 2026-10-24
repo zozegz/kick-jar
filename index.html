@@ -1,0 +1,915 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kick Jar</title>
+<meta name="theme-color" content="#FFF1F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#241A2B" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: one thumb-width column. The jar mascot fills up with candies, three squishy buttons sit under it, stats cards follow. */
+:root {
+  --bg: #FFF1F4;
+  --surface: #FFFFFF;
+  --surface-2: #FFE3EB;
+  --ink: #5A3442;
+  --ink-soft: #94707D;
+  --line: #F5CAD6;
+  --kick: #FF7FA2;
+  --wiggle: #B39CFF;
+  --tummy: #86D3A3;
+  --butter: #FFD36E;
+  --glass: #FFFFFF;
+  --glass-edge: #F2B5C7;
+  --display: "Mochiy Pop One", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", ui-rounded, system-ui, sans-serif;
+  --r: 24px;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #241A2B; --surface: #33253C; --surface-2: #402F4A; --ink: #FCE8EF; --ink-soft: #BDA1B3;
+    --line: #4F3B5B; --kick: #FF8DB0; --wiggle: #C2AFFF; --tummy: #92DCAF; --butter: #FFD77F;
+    --glass: #3A2B45; --glass-edge: #6D5180;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #241A2B; --surface: #33253C; --surface-2: #402F4A; --ink: #FCE8EF; --ink-soft: #BDA1B3;
+  --line: #4F3B5B; --kick: #FF8DB0; --wiggle: #C2AFFF; --tummy: #92DCAF; --butter: #FFD77F;
+  --glass: #3A2B45; --glass-edge: #6D5180;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 500 15px/1.45 var(--body);
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--wiggle); outline-offset: 2px; }
+
+.app {
+  max-width: 460px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 14px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* header */
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.top h1 { font: 400 21px/1.2 var(--display); margin: 0; text-wrap: balance; }
+.top time { color: var(--ink-soft); font-weight: 700; font-size: 13px; white-space: nowrap; }
+
+/* due-date progress */
+.due { background: var(--surface); border-radius: 16px; padding: 8px 12px 10px; display: grid; gap: 6px; }
+.due-top { display: flex; justify-content: space-between; align-items: center; gap: 2px 10px; flex-wrap: wrap; font-size: 13px; font-weight: 800; }
+.due-week { display: inline-flex; align-items: center; gap: 6px; }
+.due-week .fruit { font-size: 16px; line-height: 1; }
+.due-left { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; position: relative; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--wiggle), var(--kick)); border-radius: 999px; }
+.bar b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--surface); }
+
+/* hero: jar + bubble + count */
+.hero { display: grid; justify-items: center; gap: 6px; position: relative; }
+.bubble {
+  margin: 0;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  padding: 8px 14px;
+  font-weight: 800;
+  text-align: center;
+  max-width: 300px;
+  position: relative;
+  min-height: 2.9em;
+  display: grid;
+  place-items: center;
+}
+.bubble::after {
+  content: ""; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px;
+  background: var(--surface); border-right: 2px solid var(--line); border-bottom: 2px solid var(--line);
+  transform: translateX(-50%) rotate(45deg);
+}
+.bubble.pop { animation: pop .35s ease-out; }
+@keyframes pop { 0% { transform: scale(.85); } 60% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+#jar { width: min(250px, 66vw); height: auto; display: block; overflow: visible; }
+#jar.boing { animation: boing .5s cubic-bezier(.3,1.6,.5,1); transform-origin: 50% 100%; }
+@keyframes boing { 0% { transform: scale(1,1); } 30% { transform: scale(1.06,.92); } 60% { transform: scale(.97,1.04); } 100% { transform: scale(1,1); } }
+.candy-drop { animation: drop .55s cubic-bezier(.35,1.4,.6,1) both; }
+@keyframes drop { from { transform: translateY(-230px); } to { transform: translateY(0); } }
+.face { display: none; }
+#jar[data-face="happy"] .f-happy, #jar[data-face="squish"] .f-squish,
+#jar[data-face="wow"] .f-wow, #jar[data-face="meh"] .f-meh { display: inline; }
+
+.count { text-align: center; }
+.count .big { font: 400 46px/1 var(--display); font-variant-numeric: tabular-nums; }
+.count .big small { font: 800 15px/1 var(--body); color: var(--ink-soft); margin-left: 4px; }
+.count .sub { color: var(--ink-soft); font-weight: 700; font-size: 13.5px; margin-top: 4px; }
+
+/* the three buttons */
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.move {
+  --c: var(--kick);
+  border: 3px solid var(--c);
+  border-bottom-width: 7px;
+  background: color-mix(in oklab, var(--c) 26%, var(--surface));
+  border-radius: var(--r);
+  padding: 12px 6px 10px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 128px;
+  transition: transform .08s, border-bottom-width .08s;
+  touch-action: manipulation;
+  user-select: none;
+}
+.move:active { transform: translateY(4px); border-bottom-width: 3px; }
+.move[data-type="wiggle"] { --c: var(--wiggle); }
+.move[data-type="tummy"] { --c: var(--tummy); }
+.move svg { width: 50px; height: 50px; }
+.move b { font: 400 15px/1.2 var(--display); }
+.move span { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+
+.undo-row { display: flex; justify-content: center; min-height: 40px; }
+.undo {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 999px;
+  padding: 6px 6px 6px 14px; font-weight: 700; font-size: 14px;
+}
+.undo button {
+  border: 0; background: var(--ink); color: var(--bg); border-radius: 999px; padding: 5px 14px; font-weight: 800;
+}
+
+/* cards */
+.card {
+  background: var(--surface);
+  border-radius: var(--r);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.card h2 { font: 400 17px/1.25 var(--display); margin: 0; }
+.card .lede { margin: -6px 0 0; color: var(--ink-soft); font-weight: 700; font-size: 14px; }
+.card .lede strong { color: var(--ink); }
+
+/* heatmap */
+.heat-wrap { overflow-x: auto; }
+.heat {
+  display: grid;
+  grid-template-columns: 38px repeat(24, minmax(8px, 1fr));
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  min-width: 290px;
+}
+.heat .day { align-self: center; padding-right: 4px; white-space: nowrap; }
+.heat .day.today { color: var(--ink); }
+.heat .cell { aspect-ratio: 1; border-radius: 3px; background: var(--surface-2); }
+.heat .cell[data-l="1"] { background: color-mix(in oklab, var(--kick) 30%, var(--surface-2)); }
+.heat .cell[data-l="2"] { background: color-mix(in oklab, var(--kick) 55%, var(--surface-2)); }
+.heat .cell[data-l="3"] { background: color-mix(in oklab, var(--kick) 80%, var(--surface-2)); }
+.heat .cell[data-l="4"] { background: var(--kick); }
+.heat .hr { grid-column: span 6; padding-top: 2px; }
+.legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.legend i { width: 11px; height: 11px; border-radius: 3px; background: var(--surface-2); display: inline-block; }
+
+/* badges */
+.badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.badge {
+  display: grid; justify-items: center; text-align: center; gap: 4px;
+  padding: 10px 4px; border-radius: 18px; background: var(--surface-2);
+}
+.badge .medal {
+  width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 26px; background: var(--butter); box-shadow: inset 0 -4px 0 color-mix(in oklab, var(--butter) 70%, var(--ink));
+}
+.badge b { font-weight: 800; font-size: 13px; line-height: 1.2; }
+.badge span { font-size: 11.5px; color: var(--ink-soft); font-weight: 700; line-height: 1.25; }
+.badge.locked .medal { background: var(--line); box-shadow: none; filter: grayscale(1); opacity: .55; }
+.badge.locked b { color: var(--ink-soft); }
+.badge.fresh .medal { animation: shine 1.2s ease-out 2; }
+@keyframes shine { 0%, 100% { transform: scale(1) rotate(0); } 40% { transform: scale(1.2) rotate(-10deg); } 70% { transform: scale(.95) rotate(6deg); } }
+
+/* log */
+details summary { cursor: pointer; font: 400 17px/1.25 var(--display); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+details summary::-webkit-details-marker { display: none; }
+details summary::after { content: "+"; font-family: var(--body); font-weight: 800; font-size: 22px; color: var(--ink-soft); }
+details[open] summary::after { content: "–"; }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.log li { display: grid; grid-template-columns: 70px 14px 1fr auto; align-items: center; gap: 8px; font-weight: 700; }
+.log time { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: 13.5px; }
+.log .dot { width: 12px; height: 12px; border-radius: 50%; }
+.log button { border: 0; background: none; color: var(--ink-soft); font-size: 18px; padding: 2px 8px; border-radius: 8px; }
+.empty { color: var(--ink-soft); font-weight: 700; margin: 0; }
+
+/* settings */
+.settings { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+.field input {
+  font: 700 16px var(--body); color: var(--ink); background: var(--surface-2);
+  border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px;
+}
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.ghost { border: 2px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 8px 16px; font-weight: 800; }
+.ghost.danger[data-armed] { background: var(--kick); border-color: var(--kick); color: #3B1222; }
+
+.share-btn {
+  justify-self: center; margin-top: 6px;
+  border: 2px solid var(--line); background: var(--surface); border-radius: 999px;
+  padding: 8px 18px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px;
+}
+.share-btn svg { width: 18px; height: 18px; }
+
+/* share sheet */
+dialog#shareDlg {
+  border: 0; border-radius: 28px; padding: 16px; background: var(--surface); color: var(--ink);
+  width: min(420px, calc(100% - 32px)); max-height: calc(100% - 32px);
+}
+dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
+.share-body { display: grid; gap: 12px; }
+.share-body img { width: 100%; border-radius: 18px; display: block; background: var(--surface-2); aspect-ratio: 4 / 5; }
+.share-body p { margin: 0; text-align: center; color: var(--ink-soft); font-weight: 700; font-size: 13.5px; }
+.share-body .row { justify-content: center; }
+.solid { border: 0; background: var(--kick); color: #3B1222; border-radius: 999px; padding: 10px 22px; font-weight: 800; }
+
+/* toast + confetti */
+.toast {
+  position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%); max-width: calc(100% - 32px); width: max-content;
+  background: var(--ink); color: var(--bg); border-radius: 18px; padding: 12px 18px;
+  font-weight: 800; text-align: center; z-index: 10; animation: pop .35s ease-out;
+}
+.confetti { position: fixed; pointer-events: none; font-size: 18px; z-index: 9; animation: fly 1.1s ease-out forwards; }
+@keyframes fly { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<main class="app">
+  <header class="top">
+    <h1><span id="babyName">Creature</span>'s Kick Jar</h1>
+    <time id="today"></time>
+  </header>
+
+  <section class="due" aria-label="How far along">
+    <div class="due-top">
+      <span class="due-week"><span class="fruit" id="dueFruit" aria-hidden="true"></span><span id="dueWeek"></span></span>
+      <span class="due-left" id="dueLeft"></span>
+    </div>
+    <div class="bar" role="progressbar" id="dueBar" aria-valuemin="0" aria-valuemax="280" aria-label="Pregnancy progress"><i id="dueFill"></i><b style="left:32.5%"></b><b style="left:67.5%"></b></div>
+  </section>
+
+  <section class="hero" aria-live="polite">
+    <p class="bubble" id="bubble">Hi!</p>
+    <svg id="jar" viewBox="0 0 240 270" data-face="happy" role="img" aria-label="Today's jar of moves">
+      <defs>
+        <clipPath id="jarClip"><rect x="27" y="53" width="186" height="204" rx="43"/></clipPath>
+      </defs>
+      <rect x="70" y="36" width="100" height="18" rx="6" fill="var(--glass)" stroke="var(--glass-edge)" stroke-width="4"/>
+      <rect x="24" y="50" width="192" height="210" rx="46" fill="var(--glass)" stroke="var(--glass-edge)" stroke-width="4"/>
+      <g id="candies" clip-path="url(#jarClip)"></g>
+      <rect x="40" y="76" width="9" height="58" rx="4.5" fill="#fff" opacity=".55"/>
+      <rect x="40" y="142" width="9" height="12" rx="4.5" fill="#fff" opacity=".55"/>
+      <!-- lid -->
+      <rect x="56" y="12" width="128" height="28" rx="11" fill="var(--butter)" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M76 18v16M92 18v16M108 18v16M124 18v16M140 18v16M156 18v16M172 18v16" stroke="var(--ink)" stroke-width="2" opacity=".25" stroke-linecap="round"/>
+      <!-- face -->
+      <ellipse cx="78" cy="134" rx="12" ry="6.5" fill="var(--kick)" opacity=".55"/>
+      <ellipse cx="162" cy="134" rx="12" ry="6.5" fill="var(--kick)" opacity=".55"/>
+      <g class="face f-happy f-wow f-meh">
+        <circle cx="96" cy="118" r="7.5" fill="var(--ink)"/><circle cx="98.5" cy="115.5" r="2.4" fill="#fff"/>
+        <circle cx="144" cy="118" r="7.5" fill="var(--ink)"/><circle cx="146.5" cy="115.5" r="2.4" fill="#fff"/>
+      </g>
+      <g class="face f-squish" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M89 111l11 7-11 7"/><path d="M151 111l-11 7 11 7"/>
+      </g>
+      <path class="face f-happy" d="M110 132q10 11 20 0" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path class="face f-squish" d="M108 131q12 16 24 0z" fill="var(--ink)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse class="face f-wow" cx="120" cy="136" rx="6" ry="7.5" fill="var(--ink)"/>
+      <path class="face f-meh" d="M106 136q4.5-6 9 0t9 0 9 0" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    </svg>
+    <div class="count">
+      <div class="big"><span id="kickCount">0</span><small id="kickWord">kicks today</small></div>
+      <div class="sub" id="subCount">Nothing logged yet today</div>
+    </div>
+    <button class="share-btn" id="shareBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v5a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5"/></svg>
+      Share today's jar
+    </button>
+  </section>
+
+  <section class="pad" aria-label="Log a movement">
+    <button class="move" data-type="kick" id="btnKick">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <g fill="var(--surface)" stroke="var(--ink)" stroke-width="2.5">
+          <path d="M18 20c5-3 13-2 15 5 2 8-1 16-8 18-7 2-12-4-11-11 0-5 1-10 4-12z"/>
+          <circle cx="15" cy="13" r="4.2"/><circle cx="22" cy="9.5" r="3.6"/><circle cx="28.5" cy="9.5" r="3.2"/>
+          <circle cx="34" cy="12.5" r="2.8"/><circle cx="37.5" cy="17" r="2.4"/>
+        </g>
+      </svg>
+      <b>Kick!</b><span>definitely</span>
+    </button>
+    <button class="move" data-type="wiggle" id="btnWiggle">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M5 27c5-12 11-12 15 0s10 12 14 0 7-9 9-6" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <path d="M36 8v6M33 11h6M10 36v5M7.5 38.5h5" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <b>Wiggle</b><span>not sure</span>
+    </button>
+    <button class="move" data-type="tummy" id="btnTummy">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <g fill="var(--surface)" stroke="var(--ink)" stroke-width="2.5">
+          <circle cx="17" cy="30" r="9"/><circle cx="32" cy="20" r="6"/><circle cx="35" cy="35" r="4.5"/><circle cx="23" cy="10" r="3.2"/>
+        </g>
+        <circle cx="14" cy="27" r="2" fill="var(--ink)" opacity=".3"/>
+      </svg>
+      <b>Tummy</b><span>probably lunch</span>
+    </button>
+  </section>
+
+  <div class="undo-row" id="undoRow"></div>
+
+  <section class="card" aria-labelledby="heatTitle">
+    <h2 id="heatTitle">Favourite hour</h2>
+    <p class="lede" id="favHour"></p>
+    <div class="heat-wrap"><div class="heat" id="heat"></div></div>
+    <div class="legend">less <i></i><i style="background:color-mix(in oklab, var(--kick) 30%, var(--surface-2))"></i><i style="background:color-mix(in oklab, var(--kick) 55%, var(--surface-2))"></i><i style="background:color-mix(in oklab, var(--kick) 80%, var(--surface-2))"></i><i style="background:var(--kick)"></i> more</div>
+  </section>
+
+  <section class="card" aria-labelledby="badgeTitle">
+    <h2 id="badgeTitle">Badges <span id="badgeTally" style="font-family:var(--body);font-weight:800;color:var(--ink-soft);font-size:14px"></span></h2>
+    <div class="badges" id="badges"></div>
+  </section>
+
+  <details class="card" id="logCard">
+    <summary>Today's log</summary>
+    <ul class="log" id="log"></ul>
+  </details>
+
+  <details class="card">
+    <summary>Settings</summary>
+    <div class="settings">
+      <label class="field" for="nameInput">Baby's nickname
+        <input id="nameInput" maxlength="18" autocomplete="off">
+      </label>
+      <label class="field" for="dueInput">Due date
+        <input id="dueInput" type="date">
+      </label>
+      <div class="row">
+        <button class="ghost" id="exportBtn">Save a backup</button>
+        <button class="ghost" id="importBtn">Restore a backup</button>
+        <button class="ghost danger" id="wipeBtn">Erase everything</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </details>
+</main>
+
+<dialog id="shareDlg" aria-label="Share today's jar">
+  <div class="share-body">
+    <img id="shareImg" alt="Today's Kick Jar card">
+    <p id="shareHint">Long-press the picture to save it.</p>
+    <div class="row">
+      <button class="solid" id="sendBtn" hidden>Send it</button>
+      <button class="ghost" id="closeShare">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const KEY = 'kickjar.v1';
+  const TYPES = {
+    kick:   { word: 'kick',   plural: 'kicks',   color: 'var(--kick)',   buzz: [35] },
+    wiggle: { word: 'wiggle', plural: 'wiggles', color: 'var(--wiggle)', buzz: [15, 50, 15] },
+    tummy:  { word: 'tummy rumble', plural: 'tummy rumbles', color: 'var(--tummy)', buzz: [70] },
+  };
+  const LINES = {
+    kick: [
+      'GOOOAL!', 'Hi-yah! Karate class is in session.', 'Pow! Right in the bladder.',
+      'Future striker, confirmed.', '{n} has entered the chat.', 'Strong legs. Strong opinions.',
+      'Tap dance recital tonight?', 'That one was a 10/10.', 'Knock knock. Who\'s there? {n}!',
+      'Practising for the baby Olympics.',
+    ],
+    wiggle: [
+      '...was that you?', 'Mysterious swirl detected.', 'Maybe a little stretch?',
+      'Rolling over to get comfy.', 'Noted: possible wiggle.', 'Is {n} doing the worm?',
+      'A flutter. Or a butterfly.',
+    ],
+    tummy: [
+      'Blame the burrito.', 'Lunch is having opinions.', 'Tummy rumble. {n} is innocent.',
+      'Gas bubble or ghost? Logged.', 'Filed under: snacks.', 'Not a kick. Just digestion.',
+      'Your tummy says hi too.',
+    ],
+  };
+  const BADGES = [
+    { id: 'first',   icon: '🦶', name: 'First Kick',     hint: 'Log a kick' },
+    { id: 'hat',     icon: '🎩', name: 'Hat Trick',      hint: '3 kicks in a minute' },
+    { id: 'owl',     icon: '🦉', name: 'Night Owl',      hint: 'A kick after 11pm' },
+    { id: 'morning', icon: '🌅', name: 'Morning Person', hint: 'A kick before 9am' },
+    { id: 'streak',  icon: '🔥', name: '7-Day Streak',   hint: 'Log 7 days in a row' },
+    { id: 'disco',   icon: '🪩', name: 'Dance Party',    hint: '5 kicks in 10 minutes' },
+    { id: 'party',   icon: '🎉', name: 'Busy Day',       hint: '30 kicks in one day' },
+    { id: 'century', icon: '💯', name: 'Kick Century',   hint: '100 kicks in total' },
+    { id: 'burrito', icon: '🌯', name: 'Burrito Blamer', hint: '10 tummy rumbles' },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const DAY = 86400000;
+  const DEFAULT_DUE = '2027-01-20';
+
+  // roughly how big baby is, by completed week
+  const SIZES = {
+    4: ['🌱', 'a poppy seed'], 5: ['🌱', 'a sesame seed'], 6: ['🫘', 'a lentil'], 7: ['🫐', 'a blueberry'],
+    8: ['🍇', 'a raspberry'], 9: ['🍒', 'a cherry'], 10: ['🍓', 'a strawberry'], 11: ['🍋', 'a lime'],
+    12: ['🍑', 'a plum'], 13: ['🍋', 'a lemon'], 14: ['🍑', 'a peach'], 15: ['🍎', 'an apple'],
+    16: ['🥑', 'an avocado'], 17: ['🍐', 'a pear'], 18: ['🫑', 'a bell pepper'], 19: ['🥭', 'a mango'],
+    20: ['🍌', 'a banana'], 21: ['🥕', 'a carrot'], 22: ['🥭', 'a papaya'], 23: ['🍊', 'a grapefruit'],
+    24: ['🍈', 'a cantaloupe'], 25: ['🥦', 'a cauliflower'], 26: ['🥬', 'a lettuce'], 27: ['🥬', 'a cabbage'],
+    28: ['🍆', 'an aubergine'], 29: ['🎃', 'a butternut squash'], 30: ['🥬', 'a big cabbage'], 31: ['🥥', 'a coconut'],
+    32: ['🍌', 'a bunch of bananas'], 33: ['🍍', 'a pineapple'], 34: ['🍈', 'a melon'], 35: ['🍈', 'a honeydew'],
+    36: ['🥬', 'a head of romaine'], 37: ['🍈', 'a winter melon'], 38: ['🎃', 'a pumpkin'], 39: ['🍉', 'a mini watermelon'],
+    40: ['🍉', 'a watermelon'],
+  };
+
+  // ---------- storage ----------
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && Array.isArray(s.events)) return { name: s.name || 'Creature', due: s.due || DEFAULT_DUE, events: s.events, seen: s.seen || [] };
+    } catch (e) {}
+    return { name: 'Creature', due: DEFAULT_DUE, events: [], seen: [] };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  let state = load();
+
+  // ---------- time helpers ----------
+  const startOfDay = (ts) => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const dayKey = (ts) => { const d = new Date(ts); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const fmtHour = (h) => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const nameIt = (s) => s.replaceAll('{n}', state.name);
+
+  const todays = () => { const s = startOfDay(Date.now()); return state.events.filter(e => e.ts >= s).sort((a, b) => a.ts - b.ts); };
+
+  // ---------- badges (computed from events, so undo re-locks them) ----------
+  function badgeStatus() {
+    const kicks = state.events.filter(e => e.type === 'kick').map(e => e.ts).sort((a, b) => a - b);
+    const tummies = state.events.filter(e => e.type === 'tummy').length;
+    const within = (n, ms) => { for (let i = 0; i + n - 1 < kicks.length; i++) if (kicks[i + n - 1] - kicks[i] <= ms) return true; return false; };
+    const hours = kicks.map(t => new Date(t).getHours());
+
+    const perDay = {};
+    kicks.forEach(t => { const k = dayKey(t); perDay[k] = (perDay[k] || 0) + 1; });
+    const bestDay = Math.max(0, ...Object.values(perDay));
+    const todayKicks = perDay[dayKey(Date.now())] || 0;
+
+    const days = new Set(state.events.map(e => dayKey(e.ts)));
+    let best = 0, run = 0, prev = null;
+    [...new Set(state.events.map(e => startOfDay(e.ts)))].sort((a, b) => a - b).forEach(d => {
+      run = (prev !== null && Math.round((d - prev) / DAY) === 1) ? run + 1 : 1;
+      best = Math.max(best, run); prev = d;
+    });
+    let current = 0, d = startOfDay(Date.now());
+    if (!days.has(dayKey(d))) d -= DAY;
+    while (days.has(dayKey(d))) { current++; d = startOfDay(d - DAY / 2); }
+
+    return {
+      first:   { ok: kicks.length > 0 },
+      hat:     { ok: within(3, 60000) },
+      owl:     { ok: hours.some(h => h >= 23 || h < 5) },
+      morning: { ok: hours.some(h => h >= 5 && h < 9) },
+      streak:  { ok: best >= 7, prog: Math.min(current, 7) + '/7 days' },
+      disco:   { ok: within(5, 600000) },
+      party:   { ok: bestDay >= 30, prog: todayKicks + '/30 today' },
+      century: { ok: kicks.length >= 100, prog: kicks.length + '/100' },
+      burrito: { ok: tummies >= 10, prog: tummies + '/10' },
+    };
+  }
+
+  // ---------- jar ----------
+  const SLOTS = (() => {
+    // pack candy slots row by row inside the jar's rounded body, bottom up
+    const slots = [], L = 37, R = 203, T = 64, B = 247, rad = 33;
+    const inside = (x, y) => {
+      const dx = Math.max(L + rad - x, 0, x - (R - rad));
+      const dy = Math.max(T + rad - y, 0, y - (B - rad));
+      return dx * dx + dy * dy <= rad * rad;
+    };
+    let seed = 7;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for (let row = 0, y = B; y >= T; row++, y -= 15.5) {
+      for (let x = L + (row % 2 ? 9.5 : 0); x <= R; x += 19) {
+        if (inside(x, y)) slots.push({ x: x + (rnd() - .5) * 4, y: y + (rnd() - .5) * 3, r: (rnd() - .5) * 50 });
+      }
+    }
+    return slots;
+  })();
+  const SHAPES = {
+    kick: '<path d="M0 8C-10 1-10.5-8-5-8.5-2.4-8.8 0-6.6 0-4.8 0-6.6 2.4-8.8 5-8.5 10.5-8 10 1 0 8Z" fill="var(--kick)"/>',
+    wiggle: '<circle r="8.6" fill="var(--wiggle)"/>',
+    tummy: '<rect x="-7.6" y="-7.6" width="15.2" height="15.2" rx="5" fill="var(--tummy)"/>',
+  };
+
+  function renderJar(dropId) {
+    const list = todays();
+    $('candies').innerHTML = list.slice(0, SLOTS.length).map((e, i) => {
+      const s = SLOTS[i];
+      return `<g transform="translate(${s.x.toFixed(1)} ${s.y.toFixed(1)})"><g class="${e.id === dropId ? 'candy-drop' : ''}"><g transform="rotate(${s.r.toFixed(0)})">${SHAPES[e.type]}<circle cx="-3" cy="-3" r="2.2" fill="#fff" opacity=".7"/></g></g></g>`;
+    }).join('');
+  }
+
+  let faceTimer;
+  function setFace(face) {
+    const jar = $('jar');
+    jar.dataset.face = face;
+    jar.classList.remove('boing'); void jar.getBoundingClientRect(); jar.classList.add('boing');
+    clearTimeout(faceTimer);
+    faceTimer = setTimeout(() => { jar.dataset.face = 'happy'; }, 1500);
+  }
+  function say(text) {
+    const b = $('bubble');
+    b.textContent = text;
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  }
+
+  // ---------- render ----------
+  function renderCounts() {
+    const list = todays();
+    const c = { kick: 0, wiggle: 0, tummy: 0 };
+    list.forEach(e => c[e.type]++);
+    $('kickCount').textContent = c.kick;
+    $('kickWord').textContent = c.kick === 1 ? 'kick today' : 'kicks today';
+    const bits = [];
+    if (c.wiggle) bits.push(c.wiggle + ' ' + (c.wiggle === 1 ? 'wiggle' : 'wiggles'));
+    if (c.tummy) bits.push(c.tummy + ' ' + (c.tummy === 1 ? 'tummy rumble' : 'tummy rumbles'));
+    $('subCount').textContent = list.length === 0 ? 'Nothing logged yet today' : bits.length ? 'plus ' + bits.join(' · ') : 'Jar is filling up';
+    $('today').textContent = new Date().toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
+  function renderHeat() {
+    const today0 = startOfDay(Date.now());
+    // last 7 days, oldest first; setDate keeps day starts right across DST changes
+    const grid = [];
+    for (let r = 6; r >= 0; r--) { const d = new Date(today0); d.setDate(d.getDate() - r); grid.push({ start: d.getTime(), cells: new Array(24).fill(0) }); }
+    const hourTotals = new Array(24).fill(0);
+    state.events.forEach(e => {
+      if (e.type === 'tummy') return;
+      const h = new Date(e.ts).getHours();
+      if (e.ts >= today0 - 13 * DAY) hourTotals[h]++;
+      const row = grid.find((g, i) => e.ts >= g.start && (i === 6 || e.ts < grid[i + 1].start));
+      if (row && e.ts >= grid[0].start) row.cells[h]++;
+    });
+    const max = Math.max(1, ...grid.flatMap(g => g.cells));
+    let html = '';
+    grid.forEach((g, i) => {
+      const label = i === 6 ? 'Today' : new Date(g.start).toLocaleDateString([], { weekday: 'short' });
+      html += `<div class="day${i === 6 ? ' today' : ''}">${label}</div>`;
+      g.cells.forEach((n, h) => {
+        const l = n === 0 ? 0 : Math.max(1, Math.ceil((n / max) * 4));
+        html += `<div class="cell" data-l="${l}" title="${label} ${fmtHour(h)}: ${n}"></div>`;
+      });
+    });
+    html += '<div></div>' + ['12am', '6am', '12pm', '6pm'].map(t => `<div class="hr">${t}</div>`).join('');
+    $('heat').innerHTML = html;
+
+    const top = Math.max(...hourTotals);
+    if (top < 3) {
+      $('favHour').textContent = `Log a few more moves and ${state.name}'s favourite hour will show up here.`;
+    } else {
+      const h = hourTotals.indexOf(top);
+      $('favHour').innerHTML = `${escapeHtml(state.name)} is busiest around <strong>${fmtHour(h)}–${fmtHour((h + 1) % 24)}</strong>. Kicks and wiggles from the last two weeks.`;
+    }
+  }
+
+  let freshBadges = [];
+  function renderBadges() {
+    const st = badgeStatus();
+    let got = 0;
+    $('badges').innerHTML = BADGES.map(b => {
+      const s = st[b.id];
+      if (s.ok) got++;
+      const sub = s.ok ? b.hint : (s.prog || b.hint);
+      return `<div class="badge${s.ok ? '' : ' locked'}${freshBadges.includes(b.id) ? ' fresh' : ''}"><div class="medal" aria-hidden="true">${b.icon}</div><b>${b.name}</b><span>${sub}</span></div>`;
+    }).join('');
+    $('badgeTally').textContent = got + ' of ' + BADGES.length;
+    freshBadges = [];
+    return st;
+  }
+
+  function renderLog() {
+    const list = todays().reverse();
+    $('log').innerHTML = list.length
+      ? list.map(e => `<li><time>${fmtTime(e.ts)}</time><span class="dot" style="background:${TYPES[e.type].color}"></span><span>${cap(TYPES[e.type].word)}</span><button data-del="${e.id}" aria-label="Delete ${TYPES[e.type].word} at ${fmtTime(e.ts)}">×</button></li>`).join('')
+      : '<li class="empty">Nothing yet. Tap a button when you feel something.</li>';
+  }
+
+  function renderAll(dropId) {
+    $('babyName').textContent = state.name;
+    renderDue(); renderCounts(); renderJar(dropId); renderHeat(); renderLog();
+    const st = renderBadges();
+    return st;
+  }
+
+  // ---------- due date ----------
+  function pregnancy() {
+    const [y, m, d] = state.due.split('-').map(Number);
+    const left = Math.round((new Date(y, m - 1, d).getTime() - startOfDay(Date.now())) / DAY);
+    const along = Math.max(0, 280 - left);
+    const weeks = Math.floor(along / 7), days = along % 7;
+    const size = SIZES[Math.min(40, Math.max(4, weeks))];
+    const leftText = left > 1 ? `${left} days to go` : left === 1 ? '1 day to go!' : left === 0 ? 'Due today!' : `${-left} ${left === -1 ? 'day' : 'days'} past due`;
+    return { left, along, weeks, days, size, leftText, short: `${weeks}w ${days}d` };
+  }
+  function renderDue() {
+    const p = pregnancy();
+    $('dueWeek').textContent = `${p.short} · ${p.size[1].replace(/^an? /, '')}`;
+    $('dueWeek').title = `${state.name} is about the size of ${p.size[1]}`;
+    $('dueLeft').textContent = p.leftText;
+    $('dueFill').style.width = Math.min(100, (p.along / 280) * 100) + '%';
+    $('dueBar').setAttribute('aria-valuenow', Math.min(280, p.along));
+    $('dueFruit').textContent = p.size[0];
+  }
+
+  // ---------- share card ----------
+  // the card always uses the light palette so it looks the same in every chat
+  const CARD = { bg: '#FFE3EB', paper: '#FFF7F9', ink: '#5A3442', soft: '#94707D', line: '#F5CAD6', kick: '#FF7FA2', wiggle: '#B39CFF', tummy: '#86D3A3', butter: '#FFD36E', glass: '#FFFFFF', 'glass-edge': '#F2B5C7' };
+  const HEART = 'M0 8C-10 1-10.5-8-5-8.5-2.4-8.8 0-6.6 0-4.8 0-6.6 2.4-8.8 5-8.5 10.5-8 10 1 0 8Z';
+
+  async function jarImage() {
+    const svg = $('jar').cloneNode(true);
+    svg.querySelectorAll('.face:not(.f-happy)').forEach(n => n.remove());
+    svg.querySelectorAll('.candy-drop').forEach(n => n.removeAttribute('class'));
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svg.setAttribute('width', '480'); svg.setAttribute('height', '540');
+    const src = new XMLSerializer().serializeToString(svg)
+      .replace(/var\(--([a-z0-9-]+)\)/g, (m, k) => ({ ink: CARD.ink, kick: CARD.kick, wiggle: CARD.wiggle, tummy: CARD.tummy, butter: CARD.butter, glass: CARD.glass, 'glass-edge': CARD['glass-edge'] }[k] || CARD.ink));
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(src);
+    await img.decode();
+    return img;
+  }
+
+  async function drawCard() {
+    const W = 1080, H = 1350;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    try { await Promise.all([document.fonts.load('60px "Mochiy Pop One"'), document.fonts.load('800 40px Nunito')]); } catch (e) {}
+    const DISPLAY = '"Mochiy Pop One", "Arial Rounded MT Bold", sans-serif';
+    const BODY = 'Nunito, system-ui, sans-serif';
+    const fit = (text, font, size, max) => { do { g.font = font.replace('#', size); size -= 2; } while (g.measureText(text).width > max && size > 20); };
+    const center = (text, y, font, size, color, max = W - 220) => { fit(text, font, size, max); g.fillStyle = color; g.textAlign = 'center'; g.fillText(text, W / 2, y); };
+
+    // background with scattered hearts
+    g.fillStyle = CARD.bg; g.fillRect(0, 0, W, H);
+    const heart = new Path2D(HEART);
+    let seed = 11; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for (let i = 0; i < 26; i++) {
+      g.save(); g.translate(rnd() * W, rnd() * H); g.rotate((rnd() - .5) * .8); g.scale(1.6 + rnd() * 2, 1.6 + rnd() * 2);
+      g.fillStyle = ['#FFD0DC', '#E9DEFF', '#D5F2DF'][i % 3]; g.fill(heart); g.restore();
+    }
+    g.fillStyle = CARD.paper; g.beginPath(); g.roundRect(60, 60, W - 120, H - 120, 64); g.fill();
+
+    const p = pregnancy();
+    const list = todays();
+    const k = list.filter(e => e.type === 'kick').length;
+    const w = list.filter(e => e.type === 'wiggle').length;
+    const t = list.filter(e => e.type === 'tummy').length;
+
+    // week pill
+    const pill = `${p.short}  ·  ${p.leftText}`;
+    g.font = `800 34px ${BODY}`;
+    const pw = g.measureText(pill).width + 64;
+    g.fillStyle = CARD.bg; g.beginPath(); g.roundRect((W - pw) / 2, 112, pw, 64, 32); g.fill();
+    center(pill, 156, `800 #px ${BODY}`, 34, CARD.ink);
+
+    center(`${state.name}'s Kick Jar`, 262, `#px ${DISPLAY}`, 62, CARD.ink);
+    center(new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }), 316, `800 #px ${BODY}`, 34, CARD.soft);
+
+    g.drawImage(await jarImage(), (W - 460) / 2, 350, 460, 518);
+
+    // big count
+    const num = String(k), word = k === 1 ? ' kick today!' : ' kicks today!';
+    g.font = `130px ${DISPLAY}`; const nw = g.measureText(num).width;
+    g.font = `800 50px ${BODY}`; const ww = g.measureText(word).width;
+    const x0 = (W - nw - ww) / 2;
+    g.textAlign = 'left'; g.fillStyle = CARD.kick; g.font = `130px ${DISPLAY}`; g.fillText(num, x0, 1010);
+    g.fillStyle = CARD.ink; g.font = `800 50px ${BODY}`; g.fillText(word, x0 + nw, 1010);
+
+    const extras = [w && `${w} ${w === 1 ? 'wiggle' : 'wiggles'}`, t && `${t} ${t === 1 ? 'tummy rumble' : 'tummy rumbles'}`].filter(Boolean);
+    center(extras.length ? 'plus ' + extras.join(' · ') : k ? 'Strong legs, strong opinions.' : 'A quiet day so far.', 1072, `700 #px ${BODY}`, 36, CARD.soft);
+    center(`${p.size[0]}  About the size of ${p.size[1]}`, 1160, `800 #px ${BODY}`, 38, CARD.ink);
+    center('made with Kick Jar 💖', 1236, `700 #px ${BODY}`, 28, CARD.soft);
+
+    return new Promise(res => c.toBlob(res, 'image/png'));
+  }
+
+  let shareFile = null;
+  async function openShare() {
+    const btn = $('shareBtn');
+    btn.disabled = true;
+    try {
+      const blob = await drawCard();
+      shareFile = new File([blob], `kick-jar-${new Date().toISOString().slice(0, 10)}.png`, { type: 'image/png' });
+      const img = $('shareImg');
+      if (img.src) URL.revokeObjectURL(img.src);
+      img.src = URL.createObjectURL(blob);
+      const canSend = !!(navigator.canShare && navigator.canShare({ files: [shareFile] }));
+      $('sendBtn').hidden = !canSend;
+      $('shareHint').textContent = canSend ? 'Send it to WhatsApp, Messages or anywhere else. You can also long-press the picture to save it.' : 'Long-press the picture to save or share it.';
+      $('shareDlg').showModal();
+    } catch (e) {
+      toast("Couldn't make the picture. Try again in a moment.");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  async function sendShare() {
+    const p = pregnancy();
+    const k = todays().filter(e => e.type === 'kick').length;
+    try {
+      await navigator.share({ files: [shareFile], title: 'Kick Jar', text: `${state.name} kicked ${k} ${k === 1 ? 'time' : 'times'} today! ${p.short}, ${p.leftText} 💖` });
+      $('shareDlg').close();
+    } catch (e) {
+      if (e.name !== 'AbortError') $('shareHint').textContent = "Sharing didn't work here. Long-press the picture to save it instead.";
+    }
+  }
+
+  // ---------- actions ----------
+  function checkNewBadges() {
+    const st = badgeStatus();
+    const earned = BADGES.filter(b => st[b.id].ok).map(b => b.id);
+    const fresh = earned.filter(id => !state.seen.includes(id));
+    state.seen = earned;
+    save();
+    return fresh;
+  }
+
+  let undoTimer;
+  function log(type) {
+    const ev = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, ts: Date.now() };
+    state.events.push(ev);
+    const fresh = checkNewBadges();
+    freshBadges = fresh;
+    renderAll(ev.id);
+    try { navigator.vibrate && navigator.vibrate(TYPES[type].buzz); } catch (e) {}
+    setFace(type === 'kick' ? 'squish' : type === 'wiggle' ? 'wow' : 'meh');
+    say(nameIt(pick(LINES[type])));
+    showUndo(ev);
+    if (fresh.length) celebrate(fresh);
+  }
+
+  function showUndo(ev) {
+    const row = $('undoRow');
+    row.innerHTML = `<div class="undo">Logged a ${TYPES[ev.type].word} <button id="undoBtn">Undo</button></div>`;
+    $('undoBtn').onclick = () => { remove(ev.id); row.innerHTML = ''; say('Undone. No harm done.'); };
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { row.innerHTML = ''; }, 6000);
+  }
+
+  function remove(id) {
+    state.events = state.events.filter(e => e.id !== id);
+    checkNewBadges();
+    renderAll();
+  }
+
+  function celebrate(ids) {
+    const b = BADGES.find(x => x.id === ids[0]);
+    toast(`${b.icon} New badge: ${b.name}!`);
+    try { navigator.vibrate && navigator.vibrate([30, 60, 30, 60, 90]); } catch (e) {}
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = $('jar').getBoundingClientRect();
+    const bits = ['💖', '⭐', '✨', '💜', '🌸'];
+    for (let i = 0; i < 16; i++) {
+      const s = document.createElement('span');
+      s.className = 'confetti';
+      s.textContent = bits[i % bits.length];
+      s.style.left = (r.left + r.width / 2) + 'px';
+      s.style.top = (r.top + r.height / 2) + 'px';
+      const a = (i / 16) * Math.PI * 2;
+      s.style.setProperty('--dx', Math.cos(a) * (90 + Math.random() * 70) + 'px');
+      s.style.setProperty('--dy', Math.sin(a) * (90 + Math.random() * 70) - 40 + 'px');
+      s.style.setProperty('--rot', (Math.random() * 360 - 180) + 'deg');
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 1200);
+    }
+  }
+
+  let toastTimer;
+  function toast(text) {
+    document.querySelector('.toast')?.remove();
+    const t = document.createElement('div');
+    t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text;
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.remove(), 3200);
+  }
+
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+
+  // ---------- wiring ----------
+  document.querySelectorAll('.move').forEach(btn => btn.addEventListener('click', () => log(btn.dataset.type)));
+  $('log').addEventListener('click', (e) => { const id = e.target.dataset?.del; if (id) remove(id); });
+
+  $('nameInput').value = state.name;
+  $('nameInput').addEventListener('input', (e) => {
+    state.name = e.target.value.trim() || 'Creature';
+    save(); $('babyName').textContent = state.name; renderHeat(); renderDue();
+  });
+
+  $('dueInput').value = state.due;
+  $('dueInput').addEventListener('change', (e) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
+    state.due = e.target.value; save(); renderDue();
+  });
+
+  $('shareBtn').addEventListener('click', openShare);
+  $('sendBtn').addEventListener('click', sendShare);
+  $('closeShare').addEventListener('click', () => $('shareDlg').close());
+  $('shareDlg').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.events)) throw new Error('no events');
+      // merge so restoring never loses taps logged since the backup
+      const have = new Set(state.events.map(ev => ev.id));
+      const added = data.events.filter(ev => ev && ev.id && TYPES[ev.type] && typeof ev.ts === 'number' && !have.has(ev.id));
+      state.events.push(...added);
+      if (data.due) state.due = data.due;
+      if (data.name) state.name = data.name;
+      state.seen = BADGES.filter(b => badgeStatus()[b.id].ok).map(b => b.id);
+      save(); renderAll();
+      $('nameInput').value = state.name; $('dueInput').value = state.due;
+      toast(`Restored ${added.length} ${added.length === 1 ? 'entry' : 'entries'}`);
+    } catch (err) {
+      toast("That file isn't a Kick Jar backup.");
+    }
+  });
+
+  $('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'kick-jar-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('Backup saved to Downloads');
+  });
+
+  let wipeTimer;
+  $('wipeBtn').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    if (!btn.hasAttribute('data-armed')) {
+      btn.setAttribute('data-armed', ''); btn.textContent = 'Tap again to erase';
+      wipeTimer = setTimeout(() => { btn.removeAttribute('data-armed'); btn.textContent = 'Erase everything'; }, 4000);
+      return;
+    }
+    clearTimeout(wipeTimer);
+    btn.removeAttribute('data-armed'); btn.textContent = 'Erase everything';
+    state = { name: state.name, due: state.due, events: [], seen: [] };
+    save(); renderAll(); say('Fresh empty jar!'); toast('Everything erased');
+  });
+
+  // greeting
+  const n = todays().filter(e => e.type === 'kick').length;
+  say(state.events.length === 0
+    ? `Hi! I'm ${state.name}'s jar. Tap a button when you feel something.`
+    : n ? `Welcome back! ${n} ${n === 1 ? 'kick' : 'kicks'} so far today.` : `Morning! Fresh jar, ready for ${state.name}.`);
+  state.seen = BADGES.filter(b => badgeStatus()[b.id].ok).map(b => b.id);
+  renderAll();
+
+  // new day while the app sits open
+  let lastDay = dayKey(Date.now());
+  const tick = () => { if (dayKey(Date.now()) !== lastDay) { lastDay = dayKey(Date.now()); renderAll(); } };
+  setInterval(tick, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+
+  // installable + offline
+  try { navigator.storage?.persist?.(); } catch (e) {}
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
