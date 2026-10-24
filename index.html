@@ -244,6 +244,19 @@ details[open] summary::after { content: "–"; }
 .share-btn svg { width: 18px; height: 18px; }
 
 /* share sheet */
+/* first-open welcome */
+dialog#welcome {
+  border: 0; border-radius: 28px; padding: 24px 20px 20px; background: var(--surface); color: var(--ink);
+  width: min(400px, calc(100% - 32px)); max-height: calc(100% - 32px);
+}
+dialog#welcome::backdrop { background: var(--bg); }
+.welcome { display: grid; gap: 14px; }
+.welcome > img { width: 84px; height: 84px; border-radius: 22px; justify-self: center; }
+.welcome h2 { font: 400 22px/1.25 var(--display); margin: 0; text-align: center; text-wrap: balance; }
+.welcome > p { margin: -6px 0 0; text-align: center; color: var(--ink-soft); font-weight: 700; }
+.welcome .err { color: var(--ink); background: color-mix(in oklab, var(--kick) 25%, var(--surface)); border-radius: 12px; padding: 6px 10px; font-size: 13px; margin: 0; }
+.welcome .solid { justify-self: stretch; font-size: 16px; padding: 12px 22px; margin-top: 4px; }
+
 dialog#shareDlg {
   border: 0; border-radius: 28px; padding: 16px; background: var(--surface); color: var(--ink);
   width: min(420px, calc(100% - 32px)); max-height: calc(100% - 32px);
@@ -412,6 +425,22 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   </details>
 </main>
 
+<dialog id="welcome" aria-labelledby="welcomeTitle">
+  <form class="welcome" id="welcomeForm" novalidate>
+    <img src="icon-192.png" alt="">
+    <h2 id="welcomeTitle">Hi! Let's set up your Kick Jar</h2>
+    <p>Two quick things and you're ready to tap.</p>
+    <label class="field" for="welcomeName">Baby's nickname
+      <input id="welcomeName" maxlength="18" autocomplete="off" placeholder="Bean, Peanut, Creature…">
+    </label>
+    <label class="field" for="welcomeDue">Due date
+      <input id="welcomeDue" type="date" required>
+    </label>
+    <p class="err" id="welcomeErr" hidden>Pick your due date so the countdown is right.</p>
+    <button class="solid" type="submit">Start my jar</button>
+  </form>
+</dialog>
+
 <dialog id="shareDlg" aria-label="Share today's jar">
   <div class="share-body">
     <img id="shareImg" alt="Today's Kick Jar card">
@@ -483,9 +512,10 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.events)) return { name: s.name || 'Creature', due: s.due || DEFAULT_DUE, theme: s.theme || 'light', events: s.events, seen: s.seen || [] };
+      // anyone with saved data from before the welcome screen existed counts as set up
+      if (s && Array.isArray(s.events)) return { name: s.name || 'Creature', due: s.due || DEFAULT_DUE, theme: s.theme || 'light', setup: s.setup !== false, events: s.events, seen: s.seen || [] };
     } catch (e) {}
-    return { name: 'Creature', due: DEFAULT_DUE, theme: 'light', events: [], seen: [] };
+    return { name: 'Creature', due: DEFAULT_DUE, theme: 'light', setup: false, events: [], seen: [] };
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   let state = load();
@@ -898,6 +928,7 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
       state.events.push(...added);
       if (data.due) state.due = data.due;
       if (data.name) state.name = data.name;
+      state.setup = true;
       state.seen = BADGES.filter(b => badgeStatus()[b.id].ok).map(b => b.id);
       save(); renderAll();
       $('nameInput').value = state.name; $('dueInput').value = state.due;
@@ -927,7 +958,7 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     }
     clearTimeout(wipeTimer);
     btn.removeAttribute('data-armed'); btn.textContent = 'Erase everything';
-    state = { name: state.name, due: state.due, theme: state.theme, events: [], seen: [] };
+    state = { name: state.name, due: state.due, theme: state.theme, setup: true, events: [], seen: [] };
     save(); renderAll(); say('Fresh empty jar!'); toast('Everything erased');
   });
 
@@ -938,6 +969,29 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     : n ? `Welcome back! ${n} ${n === 1 ? 'kick' : 'kicks'} so far today.` : `Morning! Fresh jar, ready for ${state.name}.`);
   state.seen = BADGES.filter(b => badgeStatus()[b.id].ok).map(b => b.id);
   renderAll();
+
+  // first open on a new phone: ask for nickname + due date
+  if (!state.setup) {
+    const dlg = $('welcome');
+    const isoDay = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    $('welcomeDue').min = isoDay(-42);
+    $('welcomeDue').max = isoDay(300);
+    dlg.addEventListener('cancel', (e) => e.preventDefault());
+    $('welcomeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const due = $('welcomeDue').value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) { $('welcomeErr').hidden = false; $('welcomeDue').focus(); return; }
+      state.name = $('welcomeName').value.trim() || 'Creature';
+      state.due = due;
+      state.setup = true;
+      save();
+      $('nameInput').value = state.name; $('dueInput').value = state.due;
+      renderAll();
+      dlg.close();
+      say(`Hi! I'm ${state.name}'s jar. Tap a button when you feel something.`);
+    });
+    dlg.showModal();
+  }
 
   // new day while the app sits open
   let lastDay = dayKey(Date.now());
