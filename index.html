@@ -2,8 +2,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kick Jar</title>
-<meta name="theme-color" content="#FFF1F4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#241A2B" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFF1F4" id="themeColor">
+<meta name="color-scheme" content="only light" id="colorScheme">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -216,6 +216,16 @@ details[open] summary::after { content: "–"; }
 .empty { color: var(--ink-soft); font-weight: 700; margin: 0; }
 
 /* settings */
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg label { flex: 1; position: relative; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span {
+  display: block; text-align: center; white-space: nowrap; cursor: pointer;
+  padding: 8px 10px; border-radius: 999px; border: 2px solid var(--line);
+  background: var(--surface-2); color: var(--ink); font-weight: 800; font-size: 14px;
+}
+.seg input:checked + span { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.seg input:focus-visible + span { outline: 3px solid var(--wiggle); outline-offset: 2px; }
 .settings { display: grid; gap: 12px; }
 .field { display: grid; gap: 4px; font-weight: 700; font-size: 13px; color: var(--ink-soft); }
 .field input {
@@ -259,6 +269,21 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 </style>
+<script>
+  // Apply the saved look before anything draws, so there's no dark flash. Light unless chosen otherwise.
+  window.applyKickTheme = function (theme) {
+    var root = document.documentElement;
+    if (theme === 'dark' || theme === 'light') root.setAttribute('data-theme', theme);
+    else root.removeAttribute('data-theme');
+    document.getElementById('colorScheme').content = theme === 'dark' ? 'dark' : theme === 'system' ? 'light dark' : 'only light';
+    document.getElementById('themeColor').content = getComputedStyle(root).getPropertyValue('--bg').trim() || '#FFF1F4';
+  };
+  (function () {
+    var theme = 'light';
+    try { theme = (JSON.parse(localStorage.getItem('kickjar.v1')) || {}).theme || 'light'; } catch (e) {}
+    window.applyKickTheme(theme);
+  })();
+</script>
 
 <main class="app">
   <header class="top">
@@ -370,6 +395,13 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
       <label class="field" for="dueInput">Due date
         <input id="dueInput" type="date">
       </label>
+      <div class="field" id="themeLabel">Look
+        <div class="seg" role="radiogroup" aria-labelledby="themeLabel">
+          <label><input type="radio" name="theme" id="themeLight" value="light"><span>Light</span></label>
+          <label><input type="radio" name="theme" id="themeDark" value="dark"><span>Dark</span></label>
+          <label><input type="radio" name="theme" id="themeSystem" value="system"><span>Match phone</span></label>
+        </div>
+      </div>
       <div class="row">
         <button class="ghost" id="exportBtn">Save a backup</button>
         <button class="ghost" id="importBtn">Restore a backup</button>
@@ -451,9 +483,9 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.events)) return { name: s.name || 'Creature', due: s.due || DEFAULT_DUE, events: s.events, seen: s.seen || [] };
+      if (s && Array.isArray(s.events)) return { name: s.name || 'Creature', due: s.due || DEFAULT_DUE, theme: s.theme || 'light', events: s.events, seen: s.seen || [] };
     } catch (e) {}
-    return { name: 'Creature', due: DEFAULT_DUE, events: [], seen: [] };
+    return { name: 'Creature', due: DEFAULT_DUE, theme: 'light', events: [], seen: [] };
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   let state = load();
@@ -834,6 +866,13 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     save(); $('babyName').textContent = state.name; renderHeat(); renderDue();
   });
 
+  document.querySelectorAll('input[name="theme"]').forEach(r => {
+    r.checked = r.value === state.theme;
+    r.addEventListener('change', () => { state.theme = r.value; save(); window.applyKickTheme(state.theme); });
+  });
+  // keep the status bar colour right when "Match phone" is on and the phone flips
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => window.applyKickTheme(state.theme));
+
   $('dueInput').value = state.due;
   $('dueInput').addEventListener('change', (e) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
@@ -888,7 +927,7 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     }
     clearTimeout(wipeTimer);
     btn.removeAttribute('data-armed'); btn.textContent = 'Erase everything';
-    state = { name: state.name, due: state.due, events: [], seen: [] };
+    state = { name: state.name, due: state.due, theme: state.theme, events: [], seen: [] };
     save(); renderAll(); say('Fresh empty jar!'); toast('Everything erased');
   });
 
