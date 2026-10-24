@@ -1009,9 +1009,11 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
 
   // greeting
   const n = todays().filter(e => e.type === 'kick').length;
+  const hr = new Date().getHours();
+  const hello = hr >= 5 && hr < 12 ? 'Good morning!' : hr >= 12 && hr < 17 ? 'Good afternoon!' : hr >= 17 && hr < 22 ? 'Good evening!' : 'Hello, night owl!';
   say(state.events.length === 0
     ? `Hi! I'm ${state.name}'s jar. Tap a button when you feel something.`
-    : n ? `Welcome back! ${n} ${n === 1 ? 'kick' : 'kicks'} so far today.` : `Morning! Fresh jar, ready for ${state.name}.`);
+    : n ? `${hello} ${n} ${n === 1 ? 'kick' : 'kicks'} so far today.` : `${hello} Fresh jar, ready for ${state.name}.`);
   state.seen = BADGES.filter(b => badgeStatus()[b.id].ok).map(b => b.id);
   renderAll();
 
