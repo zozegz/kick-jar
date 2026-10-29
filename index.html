@@ -111,7 +111,29 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px 
 @keyframes drop { from { transform: translateY(-230px); } to { transform: translateY(0); } }
 .face { display: none; }
 #jar[data-face="happy"] .f-happy, #jar[data-face="squish"] .f-squish,
-#jar[data-face="wow"] .f-wow, #jar[data-face="meh"] .f-meh { display: inline; }
+#jar[data-face="wow"] .f-wow, #jar[data-face="meh"] .f-meh,
+#jar[data-face="giggle"] .f-giggle, #jar[data-face="dizzy"] .f-dizzy { display: inline; }
+
+/* tap the jar to shake it */
+#jar { cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+#jar:focus { outline: none; }
+#jar:focus-visible { outline: 3px solid var(--wiggle); outline-offset: 6px; border-radius: 24px; }
+#jar.shaking { animation: shake .7s cubic-bezier(.36,.07,.19,.97); transform-origin: 50% 90%; }
+@keyframes shake {
+  0%, 100% { transform: rotate(0); }
+  12% { transform: rotate(-9deg) translateX(-5px); }
+  26% { transform: rotate(8deg) translateX(5px); }
+  40% { transform: rotate(-6deg) translateX(-3px); }
+  54% { transform: rotate(5deg) translateX(3px); }
+  68% { transform: rotate(-3deg); }
+  82% { transform: rotate(2deg); }
+}
+#jar.shaking #candies > g > g { animation: rattle .7s ease-in-out; }
+#jar.shaking #candies > g:nth-child(2n) > g { animation-name: rattle2; }
+#jar.shaking #candies > g:nth-child(3n) > g { animation-name: rattle3; }
+@keyframes rattle { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(5px, -14px); } 45% { transform: translate(-4px, -5px); } 65% { transform: translate(3px, -9px); } 85% { transform: translate(-1px, -2px); } }
+@keyframes rattle2 { 0%, 100% { transform: translate(0, 0); } 15% { transform: translate(-6px, -10px); } 40% { transform: translate(5px, -16px); } 62% { transform: translate(-3px, -4px); } 82% { transform: translate(2px, -6px); } }
+@keyframes rattle3 { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(2px, -20px); } 50% { transform: translate(-5px, -8px); } 72% { transform: translate(4px, -12px); } }
 
 .count { text-align: center; }
 .count .big { font: 400 46px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -164,11 +186,44 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px 
 .card-head { display: flex; justify-content: space-between; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
 .weeknav { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: var(--ink-soft); }
 .weeknav span { min-width: 92px; text-align: center; font-variant-numeric: tabular-nums; }
-.weeknav button {
+.weeknav button, .cal-head button {
   width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface-2);
   font: 800 20px/1 var(--body); display: grid; place-items: center; padding: 0 0 2px;
 }
-.weeknav button:disabled { opacity: .35; cursor: default; }
+.weeknav button:disabled, .cal-head button:disabled { opacity: .35; cursor: default; }
+
+/* jar calendar */
+.cal-btn {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  background: var(--surface); border: 0; border-radius: var(--r); padding: 14px 16px;
+}
+.cal-btn svg { width: 34px; height: 34px; flex: none; }
+.cal-btn > span:not(.chev) { flex: 1; display: grid; }
+.cal-btn b { font: 400 17px/1.25 var(--display); }
+.cal-btn small { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.cal-btn .chev { font-size: 24px; font-weight: 800; color: var(--ink-soft); }
+dialog#calDlg {
+  border: 0; border-radius: 28px; padding: 16px 14px; background: var(--surface); color: var(--ink);
+  width: min(440px, calc(100% - 24px)); max-height: calc(100% - 24px);
+}
+dialog#calDlg::backdrop { background: rgb(40 20 30 / .55); }
+.cal { display: grid; gap: 10px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-head h2 { font: 400 18px/1.2 var(--display); margin: 0; text-align: center; outline: none; }
+.cal-sum, .cal-hint { margin: 0; text-align: center; font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-dow { text-align: center; font-size: 11px; font-weight: 800; color: var(--ink-soft); padding-bottom: 2px; }
+.cal-day {
+  border: 2px solid transparent; background: var(--surface-2); border-radius: 12px;
+  padding: 3px 2px 4px; display: grid; justify-items: center; gap: 1px; min-width: 0;
+}
+.cal-day .d { font-size: 10.5px; font-weight: 800; color: var(--ink-soft); justify-self: start; padding-left: 3px; line-height: 1.1; }
+.cal-day svg { width: 80%; height: auto; display: block; }
+.cal-day .k { font-size: 11px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cal-day.today { border-color: var(--kick); }
+.cal-day:disabled { opacity: .45; cursor: default; }
+.cal-day.future { opacity: .25; }
+.cal-day.blank { visibility: hidden; }
 .heat-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .week-totals { font-weight: 800; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 .card .lede { margin: -6px 0 0; color: var(--ink-soft); font-weight: 700; font-size: 14px; }
@@ -324,7 +379,7 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
 
   <section class="hero" aria-live="polite">
     <p class="bubble" id="bubble">Hi!</p>
-    <svg id="jar" viewBox="0 0 240 270" data-face="happy" role="img" aria-label="Today's jar of moves">
+    <svg id="jar" viewBox="0 0 240 270" data-face="happy" role="button" tabindex="0" aria-label="Today's jar of moves. Tap to shake it.">
       <defs>
         <clipPath id="jarClip"><rect x="27" y="53" width="186" height="204" rx="43"/></clipPath>
       </defs>
@@ -347,9 +402,14 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
         <path d="M89 111l11 7-11 7"/><path d="M151 111l-11 7 11 7"/>
       </g>
       <path class="face f-happy" d="M110 132q10 11 20 0" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" fill="none"/>
-      <path class="face f-squish" d="M108 131q12 16 24 0z" fill="var(--ink)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+      <path class="face f-giggle" d="M88 121q8-11 16 0M136 121q8-11 16 0" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <g class="face f-dizzy" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round">
+        <path d="M96 118m-2 0a2 2 0 1 1 4 0a4 4 0 1 1-8 0a6 6 0 1 1 12 0"/>
+        <path d="M144 118m-2 0a2 2 0 1 1 4 0a4 4 0 1 1-8 0a6 6 0 1 1 12 0"/>
+      </g>
+      <path class="face f-squish f-giggle" d="M108 131q12 16 24 0z" fill="var(--ink)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
       <ellipse class="face f-wow" cx="120" cy="136" rx="6" ry="7.5" fill="var(--ink)"/>
-      <path class="face f-meh" d="M106 136q4.5-6 9 0t9 0 9 0" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <path class="face f-meh f-dizzy" d="M106 136q4.5-6 9 0t9 0 9 0" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
     </svg>
     <div class="count">
       <div class="big"><span id="kickCount">0</span><small id="kickWord">kicks today</small></div>
@@ -419,6 +479,17 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     <ul class="log" id="log"></ul>
   </details>
 
+  <button class="cal-btn" id="calBtn">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="4" y="7" width="24" height="21" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="2.4"/>
+      <path d="M4 14h24" stroke="var(--ink)" stroke-width="2.4"/>
+      <path d="M11 4v6M21 4v6" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M16 25c-4-2.6-4.2-6-2-6.2 1-.1 2 .8 2 1.6 0-.8 1-1.7 2-1.6 2.2.2 2 3.6-2 6.2z" fill="var(--kick)"/>
+    </svg>
+    <span><b>Jar calendar</b><small>Look back at every day's jar</small></span>
+    <span class="chev" aria-hidden="true">›</span>
+  </button>
+
   <details class="card">
     <summary>Settings</summary>
     <div class="settings">
@@ -459,6 +530,20 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     <p class="err" id="welcomeErr" hidden>Pick your due date so the countdown is right.</p>
     <button class="solid" type="submit">Start my jar</button>
   </form>
+</dialog>
+
+<dialog id="calDlg" aria-labelledby="calTitle">
+  <div class="cal">
+    <div class="cal-head">
+      <button id="calPrev" aria-label="Previous month">‹</button>
+      <h2 id="calTitle" aria-live="polite" tabindex="-1" autofocus></h2>
+      <button id="calNext" aria-label="Next month">›</button>
+    </div>
+    <p class="cal-sum" id="calSum"></p>
+    <div class="cal-grid" id="calGrid"></div>
+    <p class="cal-hint">Tap a day to see its jar and send it.</p>
+    <button class="ghost" id="calClose">Close</button>
+  </div>
 </dialog>
 
 <dialog id="shareDlg" aria-label="Share today's jar">
@@ -548,7 +633,9 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const nameIt = (s) => s.replaceAll('{n}', state.name);
 
-  const todays = () => { const s = startOfDay(Date.now()); return state.events.filter(e => e.ts >= s).sort((a, b) => a.ts - b.ts); };
+  const nextDay = (day0) => { const d = new Date(day0); d.setDate(d.getDate() + 1); return d.getTime(); };
+  const dayEvents = (day0) => { const end = nextDay(day0); return state.events.filter(e => e.ts >= day0 && e.ts < end).sort((a, b) => a.ts - b.ts); };
+  const todays = () => dayEvents(startOfDay(Date.now()));
 
   // ---------- badges (computed from events, so undo re-locks them) ----------
   function badgeStatus() {
@@ -609,21 +696,45 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     tummy: '<rect x="-7.6" y="-7.6" width="15.2" height="15.2" rx="5" fill="var(--tummy)"/>',
   };
 
-  function renderJar(dropId) {
-    const list = todays();
-    $('candies').innerHTML = list.slice(0, SLOTS.length).map((e, i) => {
+  function candiesMarkup(list, dropId) {
+    return list.slice(0, SLOTS.length).map((e, i) => {
       const s = SLOTS[i];
-      return `<g transform="translate(${s.x.toFixed(1)} ${s.y.toFixed(1)})"><g class="${e.id === dropId ? 'candy-drop' : ''}"><g transform="rotate(${s.r.toFixed(0)})">${SHAPES[e.type]}<circle cx="-3" cy="-3" r="2.2" fill="#fff" opacity=".7"/></g></g></g>`;
+      return `<g transform="translate(${s.x.toFixed(1)} ${s.y.toFixed(1)})"><g${e.id === dropId ? ' class="candy-drop"' : ''}><g transform="rotate(${s.r.toFixed(0)})">${SHAPES[e.type]}<circle cx="-3" cy="-3" r="2.2" fill="#fff" opacity=".7"/></g></g></g>`;
     }).join('');
+  }
+  function renderJar(dropId) {
+    $('candies').innerHTML = candiesMarkup(todays(), dropId);
   }
 
   let faceTimer;
   function setFace(face) {
     const jar = $('jar');
     jar.dataset.face = face;
-    jar.classList.remove('boing'); void jar.getBoundingClientRect(); jar.classList.add('boing');
+    jar.classList.remove('boing', 'shaking'); void jar.getBoundingClientRect(); jar.classList.add('boing');
     clearTimeout(faceTimer);
     faceTimer = setTimeout(() => { jar.dataset.face = 'happy'; }, 1500);
+  }
+
+  // tap the jar: it wobbles, the candies rattle, and too much shaking makes it dizzy
+  const SHAKE_LINES = [
+    'Wheee!', 'Hehe, that tickles!', 'Rattle rattle!', 'Shake it, baby!', 'Mixing up the candies...',
+    'Careful, I\'m full of feelings!', 'Boop! Hi to you too.', 'Again! Again!',
+  ];
+  const DIZZY_LINES = ['Okay okay, I\'m dizzy!', 'The room is spinning...', 'Too much shaking! 😵‍💫', 'I need a little lie down.'];
+  let shakeTaps = [];
+  function shakeJar() {
+    const jar = $('jar');
+    const now = Date.now();
+    shakeTaps = shakeTaps.filter(t => now - t < 3000);
+    shakeTaps.push(now);
+    const dizzy = shakeTaps.length >= 5;
+    if (dizzy) shakeTaps = [];
+    jar.classList.remove('boing', 'shaking'); void jar.getBoundingClientRect(); jar.classList.add('shaking');
+    jar.dataset.face = dizzy ? 'dizzy' : 'giggle';
+    clearTimeout(faceTimer);
+    faceTimer = setTimeout(() => { jar.dataset.face = 'happy'; }, dizzy ? 2200 : 1200);
+    say(pick(dizzy ? DIZZY_LINES : SHAKE_LINES));
+    try { navigator.vibrate && navigator.vibrate(dizzy ? [40, 40, 40, 40, 120] : [18, 40, 18, 40, 18]); } catch (e) {}
   }
   function say(text) {
     const b = $('bubble');
@@ -732,9 +843,9 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   }
 
   // ---------- due date ----------
-  function pregnancy() {
+  function pregnancy(at = Date.now()) {
     const [y, m, d] = state.due.split('-').map(Number);
-    const left = Math.round((new Date(y, m - 1, d).getTime() - startOfDay(Date.now())) / DAY);
+    const left = Math.round((new Date(y, m - 1, d).getTime() - startOfDay(at)) / DAY);
     const along = Math.max(0, 280 - left);
     const weeks = Math.floor(along / 7), days = along % 7;
     const size = SIZES[Math.min(40, Math.max(4, weeks))];
@@ -756,10 +867,10 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   const CARD = { bg: '#FFE3EB', paper: '#FFF7F9', ink: '#5A3442', soft: '#94707D', line: '#F5CAD6', kick: '#FF7FA2', wiggle: '#B39CFF', tummy: '#86D3A3', butter: '#FFD36E', glass: '#FFFFFF', 'glass-edge': '#F2B5C7' };
   const HEART = 'M0 8C-10 1-10.5-8-5-8.5-2.4-8.8 0-6.6 0-4.8 0-6.6 2.4-8.8 5-8.5 10.5-8 10 1 0 8Z';
 
-  async function jarImage() {
+  async function jarImage(list) {
     const svg = $('jar').cloneNode(true);
     svg.querySelectorAll('.face:not(.f-happy)').forEach(n => n.remove());
-    svg.querySelectorAll('.candy-drop').forEach(n => n.removeAttribute('class'));
+    svg.querySelector('#candies').innerHTML = candiesMarkup(list);
     svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     svg.setAttribute('width', '480'); svg.setAttribute('height', '540');
     const src = new XMLSerializer().serializeToString(svg)
@@ -770,7 +881,8 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     return img;
   }
 
-  async function drawCard() {
+  async function drawCard(day0) {
+    const isToday = day0 === startOfDay(Date.now());
     const W = 1080, H = 1350;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d');
@@ -790,8 +902,8 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     }
     g.fillStyle = CARD.paper; g.beginPath(); g.roundRect(60, 60, W - 120, H - 120, 64); g.fill();
 
-    const p = pregnancy();
-    const list = todays();
+    const p = pregnancy(day0);
+    const list = dayEvents(day0);
     const k = list.filter(e => e.type === 'kick').length;
     const w = list.filter(e => e.type === 'wiggle').length;
     const t = list.filter(e => e.type === 'tummy').length;
@@ -804,12 +916,12 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     center(pill, 156, `800 #px ${BODY}`, 34, CARD.ink);
 
     center(`${state.name}'s Kick Jar`, 262, `#px ${DISPLAY}`, 62, CARD.ink);
-    center(new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }), 316, `800 #px ${BODY}`, 34, CARD.soft);
+    center(new Date(day0).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }), 316, `800 #px ${BODY}`, 34, CARD.soft);
 
-    g.drawImage(await jarImage(), (W - 460) / 2, 350, 460, 518);
+    g.drawImage(await jarImage(list), (W - 460) / 2, 350, 460, 518);
 
     // big count
-    const num = String(k), word = k === 1 ? ' kick today!' : ' kicks today!';
+    const num = String(k), word = (k === 1 ? ' kick' : ' kicks') + (isToday ? ' today!' : '!');
     g.font = `130px ${DISPLAY}`; const nw = g.measureText(num).width;
     g.font = `800 50px ${BODY}`; const ww = g.measureText(word).width;
     const x0 = (W - nw - ww) / 2;
@@ -817,20 +929,21 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     g.fillStyle = CARD.ink; g.font = `800 50px ${BODY}`; g.fillText(word, x0 + nw, 1010);
 
     const extras = [w && `${w} ${w === 1 ? 'wiggle' : 'wiggles'}`, t && `${t} ${t === 1 ? 'tummy rumble' : 'tummy rumbles'}`].filter(Boolean);
-    center(extras.length ? 'plus ' + extras.join(' · ') : k ? 'Strong legs, strong opinions.' : 'A quiet day so far.', 1072, `700 #px ${BODY}`, 36, CARD.soft);
+    center(extras.length ? 'plus ' + extras.join(' · ') : k ? 'Strong legs, strong opinions.' : isToday ? 'A quiet day so far.' : 'A quiet day.', 1072, `700 #px ${BODY}`, 36, CARD.soft);
     center(`${p.size[0]}  About the size of ${p.size[1]}`, 1160, `800 #px ${BODY}`, 38, CARD.ink);
     center('made with Kick Jar 💖', 1236, `700 #px ${BODY}`, 28, CARD.soft);
 
     return new Promise(res => c.toBlob(res, 'image/png'));
   }
 
-  let shareFile = null;
-  async function openShare() {
-    const btn = $('shareBtn');
+  const isoDate = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  let shareFile = null, shareDay = 0;
+  async function openShare(day0, btn) {
+    shareDay = day0;
     btn.disabled = true;
     try {
-      const blob = await drawCard();
-      shareFile = new File([blob], `kick-jar-${new Date().toISOString().slice(0, 10)}.png`, { type: 'image/png' });
+      const blob = await drawCard(day0);
+      shareFile = new File([blob], `kick-jar-${isoDate(day0)}.png`, { type: 'image/png' });
       const img = $('shareImg');
       if (img.src) URL.revokeObjectURL(img.src);
       img.src = URL.createObjectURL(blob);
@@ -845,14 +958,55 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
     }
   }
   async function sendShare() {
-    const p = pregnancy();
-    const k = todays().filter(e => e.type === 'kick').length;
+    const isToday = shareDay === startOfDay(Date.now());
+    const p = pregnancy(shareDay);
+    const k = dayEvents(shareDay).filter(e => e.type === 'kick').length;
+    const when = isToday ? 'today' : 'on ' + new Date(shareDay).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
     try {
-      await navigator.share({ files: [shareFile], title: 'Kick Jar', text: `${state.name} kicked ${k} ${k === 1 ? 'time' : 'times'} today! ${p.short}, ${p.leftText} 💖` });
+      await navigator.share({ files: [shareFile], title: 'Kick Jar', text: `${state.name} kicked ${k} ${k === 1 ? 'time' : 'times'} ${when}! ${p.short}, ${p.leftText} 💖` });
       $('shareDlg').close();
     } catch (e) {
       if (e.name !== 'AbortError') $('shareHint').textContent = "Sharing didn't work here. Long-press the picture to save it instead.";
     }
+  }
+
+  // ---------- jar calendar ----------
+  let calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0, 0, 0, 0);
+  const miniJar = (list) =>
+    `<svg viewBox="0 0 240 270" aria-hidden="true"><rect x="70" y="36" width="100" height="18" rx="6" fill="var(--glass)" stroke="var(--glass-edge)" stroke-width="10"/><rect x="24" y="50" width="192" height="210" rx="46" fill="var(--glass)" stroke="var(--glass-edge)" stroke-width="10"/>${candiesMarkup(list)}<rect x="56" y="12" width="128" height="28" rx="11" fill="var(--butter)" stroke="var(--ink)" stroke-width="7"/></svg>`;
+
+  function renderCalendar() {
+    const y = calMonth.getFullYear(), m = calMonth.getMonth();
+    const today0 = startOfDay(Date.now());
+    const first = state.events.reduce((a, e) => Math.min(a, e.ts), Infinity);
+    $('calTitle').textContent = calMonth.toLocaleDateString([], { month: 'long', year: 'numeric' });
+    $('calNext').disabled = y === new Date().getFullYear() && m === new Date().getMonth();
+    $('calPrev').disabled = !(first < calMonth.getTime());
+
+    let html = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-dow">${d[0]}</div>`).join('');
+    const lead = (new Date(y, m, 1).getDay() + 6) % 7; // Monday first
+    for (let i = 0; i < lead; i++) html += '<div class="cal-day blank"></div>';
+    const daysIn = new Date(y, m + 1, 0).getDate();
+    const tot = { kick: 0, wiggle: 0 };
+    let best = null;
+    for (let d = 1; d <= daysIn; d++) {
+      const day0 = new Date(y, m, d).getTime();
+      const label = new Date(day0).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+      if (day0 > today0) {
+        html += `<button class="cal-day future" disabled aria-label="${label}"><span class="d">${d}</span>${miniJar([])}<span class="k">&nbsp;</span></button>`;
+        continue;
+      }
+      const list = dayEvents(day0);
+      const k = list.filter(e => e.type === 'kick').length;
+      tot.kick += k; tot.wiggle += list.filter(e => e.type === 'wiggle').length;
+      if (k && (!best || k > best.k)) best = { k, day0 };
+      html += `<button class="cal-day${day0 === today0 ? ' today' : ''}" data-day="${day0}" ${list.length ? '' : 'disabled'} aria-label="${label}: ${k} ${k === 1 ? 'kick' : 'kicks'}"><span class="d">${d}</span>${miniJar(list)}<span class="k">${list.length ? k : '–'}</span></button>`;
+    }
+    $('calGrid').innerHTML = html;
+    const monthName = calMonth.toLocaleDateString([], { month: 'long' });
+    $('calSum').textContent = tot.kick || tot.wiggle
+      ? `${tot.kick} kicks · ${tot.wiggle} wiggles in ${monthName}` + (best ? `. Busiest: ${new Date(best.day0).toLocaleDateString([], { month: 'short', day: 'numeric' })} with ${best.k}.` : '')
+      : `Nothing logged in ${monthName}.`;
   }
 
   // ---------- actions ----------
@@ -954,7 +1108,26 @@ dialog#shareDlg::backdrop { background: rgb(40 20 30 / .55); }
   $('heatPrev').addEventListener('click', () => { weeksBack++; renderHeat(); });
   $('heatNext').addEventListener('click', () => { weeksBack = Math.max(0, weeksBack - 1); renderHeat(); });
 
-  $('shareBtn').addEventListener('click', openShare);
+  $('shareBtn').addEventListener('click', (e) => openShare(startOfDay(Date.now()), e.currentTarget));
+
+  const jarEl = $('jar');
+  jarEl.addEventListener('click', shakeJar);
+  jarEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); shakeJar(); } });
+  jarEl.addEventListener('animationend', (e) => { if (e.animationName === 'shake') jarEl.classList.remove('shaking'); });
+
+  $('calBtn').addEventListener('click', () => {
+    calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0, 0, 0, 0);
+    renderCalendar();
+    $('calDlg').showModal();
+  });
+  $('calPrev').addEventListener('click', () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); });
+  $('calNext').addEventListener('click', () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); });
+  $('calClose').addEventListener('click', () => $('calDlg').close());
+  $('calDlg').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) { e.currentTarget.close(); return; }
+    const day = e.target.closest('.cal-day[data-day]');
+    if (day && !day.disabled) openShare(Number(day.dataset.day), day);
+  });
   $('sendBtn').addEventListener('click', sendShare);
   $('closeShare').addEventListener('click', () => $('shareDlg').close());
   $('shareDlg').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
